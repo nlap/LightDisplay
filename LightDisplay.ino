@@ -1,4 +1,4 @@
-// Code to bit bang the protocol for BriteStar tri-color LED christmas lights
+// Example code to bit bang the protocol for BriteStar tri-color LED christmas lights
 // Based off work by James Brown (https://github.com/jbrown123/WalgreenLights)
 // Modifed by Nathan Lapierre (https://github.com/nlap/lightdisplay)
 
