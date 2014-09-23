@@ -2,6 +2,12 @@
 // Based off work by James Brown (https://github.com/jbrown123/WalgreenLights)
 // Modifed by Nathan Lapierre (https://github.com/nlap/lightdisplay)
 
+struct RGB {
+  byte r;
+  byte g;
+  byte b;
+};
+
 class LightDisplay
 {
   private:
@@ -12,7 +18,7 @@ class LightDisplay
     int pinMask;
     
     //sends a single packet for tri-color LED value
-    void SendPacket(unsigned char r, unsigned char g, unsigned char b)
+    void SendPacket(RGB values)
     {
       register volatile uint8_t *port = pinPort;
       register int mask = pinMask;
@@ -37,30 +43,30 @@ class LightDisplay
       for (int i = 0; i < 4; i++)
       {
         *port |= mask;  // HIGH
-        delayMicroseconds((g & 1) ? 3 : 1);
+        delayMicroseconds((values.g & 1) ? 3 : 1);
         *port &= ~mask;  // LOW
         delayMicroseconds(3);
-        g >>= 1;
+        values.g >>= 1;
       }
       
       //blue intensity
       for (int i = 0; i < 4; i++)
       {
         *port |= mask;  // HIGH
-        delayMicroseconds((b & 1) ? 3 : 1);
+        delayMicroseconds((values.b & 1) ? 3 : 1);
         *port &= ~mask;  // LOW
         delayMicroseconds(3);
-        b >>= 1;
+        values.b >>= 1;
       }
       
       //red intensity
       for (int i = 0; i < 4; i++)
       {
         *port |= mask;  // HIGH
-        delayMicroseconds((r & 1) ? 3 : 1);
+        delayMicroseconds((values.r & 1) ? 3 : 1);
         *port &= ~mask;  // LOW
         delayMicroseconds(3);
-        r >>= 1;
+        values.r >>= 1;
       }
 
       SREG = oldSREG;
@@ -69,7 +75,7 @@ class LightDisplay
       /////////////////////
 
       //interpacket gap
-      delayMicroseconds(100);
+      delayMicroseconds(60);
     }
 
 
@@ -83,7 +89,8 @@ class LightDisplay
       
       for (int i = 0; i < numLights; i++)
       {
-        SendPacket(0, 0, 0);
+        RGB off = { 0 , 0 , 0 };
+        SendPacket(off);
       }
     }
 
@@ -113,8 +120,13 @@ class LightDisplay
     {
       for (int i = 0; i < numLights; i++)
       {
-        SendPacket(*rPtr++, *gPtr++, *bPtr++);
+       // SendPacket(*rPtr++, *gPtr++, *bPtr++);
       }
+    }
+    
+    void SendValue(RGB value)
+    {
+      SendPacket(value);
     }
     
     //set all lights to same color
@@ -122,7 +134,7 @@ class LightDisplay
     {
       for (int i = 0; i < numLights; i++)
       {
-        SendPacket(r, g , b);
+        //SendPacket(r, g , b);
       }
     }
     
@@ -138,16 +150,24 @@ class LightDisplay *lights;
 void setup()
 {
   //output packets for 15 lights to pin 13
-  lights = new LightDisplay(13, 15);
+  lights = new LightDisplay(13, 90);
 }
 
 void loop()
 {
 
-  //red, green, blue sequence
-  lights->AllTo(15, 0, 0);delay(1500);
-  lights->AllTo(0, 15, 0);delay(1500);
-  lights->AllTo(0, 0, 15);delay(1500);
+  //random sequence
+  RGB on = { 15 , 0 , 0 };
+  for (int i = 0; i < 16; i++)
+  {
+    RGB off = { random(0, 15), random(0, 15), random(0, 15) };
+    if (i==random(0,16)) {
+      lights->SendValue(on);
+    } else {
+      lights->SendValue(off);
+    }
+  }
+  delay(1000);
   
 }
 
