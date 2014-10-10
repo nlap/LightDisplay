@@ -1,9 +1,18 @@
-﻿using UnityEngine;
+﻿// Beach Pong - Nocturne 2014, Halifax, NS
+//
+// Light display controller
+// Updates the large arduino-controlled light grid with game status
+//
+// Arthur Silva Bastos, Nathan Lapierre
+// GPLv3 - See LICENSE
+
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using UnityOSC;
+using System.IO.Ports;
 
 public class lights : MonoBehaviour {
 	static int lastX = 0;
@@ -11,6 +20,7 @@ public class lights : MonoBehaviour {
 
 	public GameObject cube;
 	private Dictionary<string, ServerLog> servers;
+	private SerialPort port;
     
 	// Starts OSC and the server list
 	void Start() {
@@ -23,21 +33,30 @@ public class lights : MonoBehaviour {
 			}
 		}
 
-		//don't change this
+		//open serial port to Arduino
+		port = new SerialPort("/dev/tty.usbserial-A100evJ6", 115200);
+		port.Open();
+
+		//init OSC to recieve messages from game server
 		OSCHandler.Instance.Init();
 		servers = new Dictionary<string, ServerLog>();
         
 	}
 
+	//close open port on exit
+	~lights() {
+		port.Close();
+	}
+
 	// Handles data
 	void Update() {
 
-		//don't change this
+		//receive OSC message from game server with status
 	    OSCHandler.Instance.UpdateLogs();
 	    servers = OSCHandler.Instance.Servers;
-		//
 
-		//keep this loop
+		String lightArray = "";
+
 	    foreach (KeyValuePair<string, ServerLog> item in servers)
 	    {
 	        if (item.Value.log.Count > 0)
@@ -55,11 +74,10 @@ public class lights : MonoBehaviour {
 				int gridY = ((int)item.Value.packets[lastPacketIndex].Data[0]+12)/4;
 				if(gridY > 6) gridY = 6;
 				else if (gridY < 0) gridY = 0;
-				//
 
 				Debug.Log(gridX + " " + gridY);
 
-				//this is for testing purposes, just change color
+				//show ball position on representation of light display
 				GameObject lastCube = GameObject.Find("cube" + lastX + "x" + lastY);
 				GameObject currentCube = GameObject.Find("cube" + gridX + "x" + gridY);
 
@@ -68,8 +86,21 @@ public class lights : MonoBehaviour {
 
 				lastX = gridX;
 				lastY = gridY;
-				//
+
+				//build array of light values to send to arduino
+				for (int i=0; i<=200; i++) {
+					if (i == gridX * gridY) {
+						lightArray += "ppp";
+					} else {
+						lightArray += "aaa";
+					}
+				}
+
 	        }
 	    }
+
+		//send the light values
+		port.Write(lightArray);
+
 	} 
 }

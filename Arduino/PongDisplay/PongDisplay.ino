@@ -115,6 +115,11 @@ class LightDisplay
       pinMode(pin, INPUT);
     }
     
+    int getNumLights()
+    {
+      return numLights;
+    }
+    
     //loop through array of RGB values for each bulb in string
     void SendValues(unsigned char *rPtr, unsigned char *gPtr, unsigned char *bPtr)
     {
@@ -134,7 +139,8 @@ class LightDisplay
     {
       for (int i = 0; i < numLights; i++)
       {
-        //SendPacket(r, g , b);
+        RGB rgb = {r,g,b};
+        SendPacket(rgb);
       }
     }
     
@@ -149,25 +155,58 @@ class LightDisplay *lights;
 
 void setup()
 {
-  //output packets for 15 lights to pin 13
-  lights = new LightDisplay(13, 90);
+  Serial.begin(115200);
+  
+  //output packets for 200 lights to pin 13
+  lights = new LightDisplay(13, 200);
 }
 
 void loop()
 {
-
-  //random sequence
-  RGB on = { 15 , 0 , 0 };
-  for (int i = 0; i < 16; i++)
+  
+  //receive light data from controller
+  if ( Serial.available () > 0 ) 
   {
-    RGB off = { random(0, 15), random(0, 15), random(0, 15) };
-    if (i==random(0,16)) {
-      lights->SendValue(on);
-    } else {
-      lights->SendValue(off);
+    static char input[600]; //numLights * 3
+    static uint8_t i = 0;
+    char c = Serial.read ();
+  
+    //read RGB values for all lights in display
+    if ( c != '\r' && i <= lights->getNumLights() * 3)
+      input[i++] = c;
+      
+    else
+    {
+      //tokenize 3 at a time, for RGB
+      for (static uint8_t j=0; j<i; j+=3) {
+        RGB val;
+        static uint8_t l = 0;
+        
+        for (static uint8_t k=j; k<j+2; k++) {
+          static char *a;
+          static char *ptr;
+          a = strtok_r(input, "", &ptr);
+        
+          //a-p := 1-15, values for RGB
+          //send packets
+          if (l==0)
+            val.r = a[k] - 97;
+          else if (l==1)
+            val.g = a[k] - 97;
+          else {
+            val.b = a[k] - 97;
+            lights->SendValue(val);
+            Serial.println("sent packet");
+          }
+          Serial.print(j);
+          l++;
+
+        }
+        
+        delay(100);
+      }
     }
   }
-  delay(1000);
   
 }
 
