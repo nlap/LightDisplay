@@ -172,36 +172,34 @@ void loop()
     char c = Serial.read ();
   
     //read RGB values for all lights in display
-    if ( c != '\r' && i <= lights->getNumLights() * 3)
+    if ( c != '\r' && i <= lights->getNumLights() * 3) {
       input[i++] = c;
-      
-    else
-    {
+    } else {
       //tokenize 3 at a time, for RGB
       for (static uint8_t j=0; j<i; j+=3) {
         RGB val;
         static uint8_t l = 0;
+        static uint8_t k = 0;
         
-        for (static uint8_t k=j; k<j+2; k++) {
+        for (k=j; k<j+3; k++) {
           static char *a;
           static char *ptr;
           a = strtok_r(input, "", &ptr);
         
           //a-p := 1-15, values for RGB
           //send packets
-          if (l==0)
+          if (l==0) {
             val.r = a[k] - 97;
-          else if (l==1)
+          } else if (l==1) {
             val.g = a[k] - 97;
-          else {
+          } else {
             val.b = a[k] - 97;
             lights->SendValue(val);
-            Serial.println("sent packet");
           }
-          Serial.print(j);
           l++;
 
         }
+        l=0;
         
         delay(100);
       }
