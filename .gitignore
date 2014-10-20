@@ -157,3 +157,6 @@ $RECYCLE.BIN/
 Controller/Temp
 lights.userprefs
 Controller/Library/metadata
+Controllers/ControllerLED/Library/metadata
+Controllers/ControllerBritestar/Library/metadata
+Controllers/ControllerBritestar/Temp
